@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import * as firebase from 'firebase';      //dont know what happened here
+import { UserService } from '../shared/user.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-header',
@@ -9,16 +11,48 @@ import * as firebase from 'firebase';      //dont know what happened here
 export class HeaderComponent implements OnInit {
 
   isLoggedIn: boolean=false;
-  constructor() { }
+  name:string;
+  uid:string;
+  email:string;
+  constructor(private userService:UserService,private router:Router) { }
 
   ngOnInit() {
-    firebase.auth().onAuthStateChanged(userdata=>{
+
+    this.userService.statusChange.subscribe(userData=>{
+      if(userData){
+        this.name=userData.name;
+        this.email=userData.email;
+        this.uid=userData.uid;
+      }else{
+        this.name=null;
+        this.email=null;
+        this.uid=null;
+      }
+    })
+
+    firebase.auth().onAuthStateChanged(userData=>{
       //we are logged in
-      if(userdata && userdata.emailVerified){
+      if(userData && userData.emailVerified){        
         this.isLoggedIn=true;
+        const user=this.userService.getProfile();
+        if(user&&user.name){
+          this.name=user.name;
+          this.email=user.email;
+          this.uid=user.uid;
+        }
+        this.router.navigate(['/allposts']);
       }else{
         this.isLoggedIn=false;        
       }
+    })
+  }
+
+  onLogout(){
+    firebase.auth().signOut()
+    .then(()=>{
+      this.userService.destroy();
+      this.isLoggedIn=false;  //my changes to inject router service to move out to home page after logout since its not doing default
+      this.router.navigate(['/']);
     })
   }
 
