@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import * as firebase from 'firebase';      //dont know what happened here
 import _ from 'lodash';
+import { MyFireService } from '../shared/myfire.service';
+import { NotificationService } from '../shared/notification.service';
 
 @Component({
   selector: 'app-all-posts',
@@ -12,7 +14,7 @@ export class AllPostsComponent implements OnInit, OnDestroy {
   loadMoreRef:any;
   all:any=[];
 
-  constructor() { }
+  constructor(private myFire:MyFireService, private notifier:NotificationService) { }
 
   ngOnInit() {
     this.allRef=firebase.database().ref('allposts').limitToFirst(3);
@@ -50,6 +52,17 @@ export class AllPostsComponent implements OnInit, OnDestroy {
     if(this.loadMoreRef){
       this.loadMoreRef.off();
     }
+  }
+
+  onFavoritesClicked(imageData){
+    this.myFire.handleFavoriteClicked(imageData)
+    .then(data=>{
+      this.notifier.display('success','Image added to favorites');
+    })
+    .catch(err=>{
+      this.notifier.display('error','Error adding image to favorites');
+
+    })
   }
 
 }
